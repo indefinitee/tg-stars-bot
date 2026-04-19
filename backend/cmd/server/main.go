@@ -4,12 +4,12 @@ import (
 	"context"
 	"log"
 	"os"
-	"strconv"
 
 	"tg-stars-bot/internal/domain"
 	"tg-stars-bot/internal/infrastructure/bitrix"
 	"tg-stars-bot/internal/infrastructure/db"
 	"tg-stars-bot/internal/transport/handlers"
+	"tg-stars-bot/internal/usecase"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -63,10 +63,10 @@ func main() {
 		})
 	}
 
-	// Initialize use cases
-	voteUC := newVoteUseCase(userRepo, periodRepo, voteRepo, bitrixClient)
-	reportUC := newReportUseCase(userRepo, periodRepo, voteRepo)
-	adminUC := newAdminUseCase(userRepo, periodRepo, voteRepo, bitrixClient)
+	// Initialize use cases using the usecase package constructors
+	voteUC := usecase.NewVoteUseCase(userRepo, periodRepo, voteRepo, bitrixClient)
+	reportUC := usecase.NewReportUseCase(userRepo, periodRepo, voteRepo)
+	adminUC := usecase.NewAdminUseCase(userRepo, periodRepo, voteRepo, bitrixClient)
 
 	// Initialize handler
 	handler := handlers.NewHandler(voteUC, reportUC, adminUC)
@@ -91,75 +91,4 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
-
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intVal, err := strconv.Atoi(value); err == nil {
-			return intVal
-		}
-	}
-	return defaultValue
-}
-
-// Import use cases (placeholder - will be created via wire or manual DI)
-func newVoteUseCase(
-	userRepo domain.UserRepository,
-	periodRepo domain.PeriodRepository,
-	voteRepo domain.VoteRepository,
-	bitrixClient domain.BitrixClient,
-) *voteUseCase {
-	return &voteUseCase{
-		userRepo:     userRepo,
-		periodRepo:   periodRepo,
-		voteRepo:     voteRepo,
-		bitrixClient: bitrixClient,
-	}
-}
-
-func newReportUseCase(
-	userRepo domain.UserRepository,
-	periodRepo domain.PeriodRepository,
-	voteRepo domain.VoteRepository,
-) *reportUseCase {
-	return &reportUseCase{
-		userRepo:   userRepo,
-		periodRepo: periodRepo,
-		voteRepo:   voteRepo,
-	}
-}
-
-func newAdminUseCase(
-	userRepo domain.UserRepository,
-	periodRepo domain.PeriodRepository,
-	voteRepo domain.VoteRepository,
-	bitrixClient domain.BitrixClient,
-) *adminUseCase {
-	return &adminUseCase{
-		userRepo:     userRepo,
-		periodRepo:   periodRepo,
-		voteRepo:     voteRepo,
-		bitrixClient: bitrixClient,
-	}
-}
-
-// Local type aliases for use case construction
-type voteUseCase struct {
-	userRepo     domain.UserRepository
-	periodRepo   domain.PeriodRepository
-	voteRepo     domain.VoteRepository
-	bitrixClient domain.BitrixClient
-}
-
-type reportUseCase struct {
-	userRepo   domain.UserRepository
-	periodRepo domain.PeriodRepository
-	voteRepo   domain.VoteRepository
-}
-
-type adminUseCase struct {
-	userRepo     domain.UserRepository
-	periodRepo   domain.PeriodRepository
-	voteRepo     domain.VoteRepository
-	bitrixClient domain.BitrixClient
 }
